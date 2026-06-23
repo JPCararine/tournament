@@ -8,7 +8,9 @@ public record DashboardResponse(
         List<TeamSummary> pendentes,
         List<TeamSummary> confirmadas,
         long totalPendentes,
-        long totalConfirmadas
+        long totalConfirmadas,
+        long maxTeams,
+        boolean registrationOpen
 ) {
 
     public record TeamSummary(String teamName, TeamStatus status) {

@@ -9,6 +9,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -19,16 +20,19 @@ public class AbacatePayClient {
     private static final String CREATE_PIX_PATH = "/v2/transparents/create";
 
     private final RestClient restClient;
+    private final int pixExpiresSeconds;
 
-    public AbacatePayClient(@Qualifier("abacatePayRestClient") RestClient restClient) {
+    public AbacatePayClient(@Qualifier("abacatePayRestClient") RestClient restClient,
+                            @Value("${abacatepay.pix-expires-seconds}") int pixExpiresSeconds) {
         this.restClient = restClient;
+        this.pixExpiresSeconds = pixExpiresSeconds;
     }
 
     public PixCharge createPixCharge(Team team, int amountCents, String description) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("amount", amountCents);
         data.put("description", description);
-        data.put("expiresIn", 3600);
+        data.put("expiresIn", pixExpiresSeconds);
         data.put("externalId", team.getId().toString());
         Map<String, Object> body = Map.of("method", "PIX", "data", data);
 
