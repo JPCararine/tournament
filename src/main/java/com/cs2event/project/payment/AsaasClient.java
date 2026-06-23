@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestClient;
 
 @Component
@@ -62,6 +63,10 @@ public class AsaasClient {
             );
         } catch (AsaasException e) {
             throw e;
+        } catch (RestClientResponseException e) {
+            log.error("Asaas recusou a criacao do QR Code Pix para equipe {}: status={} body={}",
+                    team.getTeamName(), e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new AsaasException("Asaas recusou a criacao do QR Code Pix", e);
         } catch (Exception e) {
             log.error("Falha ao criar QR Code Pix no Asaas para equipe {}", team.getTeamName(), e);
             throw new AsaasException("Falha ao criar QR Code Pix no Asaas", e);

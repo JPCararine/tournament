@@ -22,20 +22,25 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final PaymentService paymentService;
     private final EmailService emailService;
+    private final PendingTeamCleanupService pendingTeamCleanupService;
     private final int maxTeams;
 
     public TeamService(TeamRepository teamRepository,
                        PaymentService paymentService,
                        EmailService emailService,
+                       PendingTeamCleanupService pendingTeamCleanupService,
                        @Value("${app.tournament.max-teams}") int maxTeams) {
         this.teamRepository = teamRepository;
         this.paymentService = paymentService;
         this.emailService = emailService;
+        this.pendingTeamCleanupService = pendingTeamCleanupService;
         this.maxTeams = maxTeams;
     }
 
     @Transactional
     public Team register(TeamRegistrationRequest request) {
+        pendingTeamCleanupService.removeExpiredPendingTeams();
+
         Team team = new Team();
         // Cada equipe — pendente ou confirmada — ocupa uma vaga. Ao atingir o
         // limite, as inscrições ficam travadas. Pendentes não pagas expiram e
