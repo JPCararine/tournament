@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Confirmação de Inscrição - CHAMPIONSHIP X</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=JetBrains+Mono:wght@600&family=Hanken+Grotesk:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=JetBrains+Mono:wght@100..900&family=Montserrat:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#2d3449",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "outline-variant": "#494454",
+                        "on-surface-variant": "#cbc3d7",
+                        "on-secondary-fixed-variant": "#005236",
+                        "on-primary-container": "#340080",
+                        "on-surface": "#dae2fd",
+                        "surface-tint": "#d0bcff",
+                        "on-error": "#690005",
+                        "tertiary": "#ffb2b7",
+                        "on-tertiary": "#67001b",
+                        "on-primary": "#3c0091",
+                        "on-tertiary-container": "#5b0017",
+                        "inverse-primary": "#6d3bd7",
+                        "secondary-container": "#00a572",
+                        "secondary-fixed-dim": "#4edea3",
+                        "on-tertiary-fixed": "#40000d",
+                        "primary-fixed-dim": "#d0bcff",
+                        "surface-dim": "#0b1326",
+                        "on-background": "#dae2fd",
+                        "primary-container": "#a078ff",
+                        "tertiary-fixed": "#ffdadb",
+                        "surface-container-lowest": "#060e20",
+                        "surface-container-low": "#131b2e",
+                        "primary-fixed": "#e9ddff",
+                        "surface-container": "#171f33",
+                        "inverse-on-surface": "#283044",
+                        "outline": "#958ea0",
+                        "background": "#0b1326",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "surface-variant": "#2d3449",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#31394d",
+                        "on-primary-fixed-variant": "#5516be",
+                        "secondary": "#4edea3",
+                        "on-primary-fixed": "#23005c",
+                        "tertiary-container": "#ff516a",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "secondary-fixed": "#6ffbbe",
+                        "on-secondary-fixed": "#002113",
+                        "inverse-surface": "#dae2fd",
+                        "primary": "#d0bcff",
+                        "surface-container-high": "#222a3d",
+                        "surface": "#0b1326",
+                        "on-secondary": "#003824",
+                        "on-secondary-container": "#00311f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "base": "8px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Montserrat"],
+                        "label-caps": ["JetBrains Mono"],
+                        "display-lg": ["Montserrat"],
+                        "body-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(208, 188, 255, 0.1);
+        }
+        .qr-glow {
+            box-shadow: 0 0 20px rgba(208, 188, 255, 0.2);
+        }
+        .primary-glow-hover:hover {
+            box-shadow: 0 0 15px rgba(208, 188, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col items-center py-12 px-4">
+<!-- Top AppBar Component Simulation -->
+<header class="w-full max-w-2xl mb-12 flex justify-between items-center py-4 border-b border-outline-variant">
+<div class="font-headline-md text-headline-md font-bold text-primary tracking-tight">
+            CHAMPIONSHIP X
+        </div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</div>
+</header>
+<!-- Main Email Container -->
+<main class="w-full max-w-xl glass-card rounded-lg p-base md:p-margin-desktop relative overflow-hidden">
+<!-- Decorative Glow Background -->
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[100px] rounded-full"></div>
+<div class="absolute -bottom-24 -left-24 w-48 h-48 bg-secondary/10 blur-[100px] rounded-full"></div>
+<!-- Title Section -->
+<section class="text-center mb-10">
+<span class="font-label-caps text-label-caps text-secondary mb-4 block">CONFIRMAÇÃO PENDENTE</span>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-2">Confirmação de Inscrição</h1>
+<div class="h-1 w-20 bg-primary mx-auto rounded-full"></div>
+</section>
+<!-- Body Message -->
+<section class="mb-10 text-center px-4">
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                Sua equipe está quase lá! Para garantir sua vaga no torneio, realize o pagamento via PIX utilizando o QR Code abaixo. Após a confirmação, seu status será atualizado automaticamente para <span class="text-secondary font-bold">'Confirmado'</span>.
+            </p>
+</section>
+<!-- QR Code Section -->
+<section class="flex flex-col items-center mb-12">
+<div class="p-4 bg-white rounded-lg qr-glow mb-4">
+<img alt="QR Code PIX para pagamento" class="w-48 h-48 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGCfQ0FX658jkK3V-e-o2CeXMDSIi-lzOx7CALeBd4vbmj3pTGBcg47rZCVteUlzK7hFPyBdVWcvQJa5s4Yx8I05zuhRGDjohC2fEdM-rp3Ui6ToRC9RgG0fMrUmFKfCG9l0s9NovSmFI2GI1OlbhDd99R-EWBQnF9UnYELPNZiuwySyTE69ooD7qzGJGoCoxa31FRtOWyzzz7LiBQA1zAjpYk-TQESNQ3lEwSZdp8V6lbFd6wTFx2Kz5QPmX-1OF7UxuM8FYOXFU4"/>
+</div>
+<p class="font-label-caps text-label-caps text-on-surface-variant opacity-70">VALOR: R$ 50,00 | CHAVE: pix@championshipx.gg</p>
+</section>
+<!-- Additional Instructions -->
+<section class="bg-surface-container-high rounded-lg p-6 border-l-4 border-primary mb-10">
+<h2 class="font-headline-md text-headline-md text-primary mb-3">Instruções Adicionais</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">
+                Clique no botão abaixo para entrar no servidor oficial do Discord e receber seu cargo de Capitão. Lá você terá acesso aos canais de suporte e tabelas do torneio.
+            </p>
+<a class="inline-block w-full text-center py-4 bg-primary text-on-primary font-bold tracking-widest rounded-lg primary-glow-hover transition-all active:scale-95 font-label-caps uppercase" href="#">
+                ENTRAR NO DISCORD
+            </a>
+</section>
+<!-- Call to Action Stats/Info -->
+<div class="grid grid-cols-3 gap-gutter pt-6 border-t border-outline-variant/30 text-center">
+<div>
+<p class="font-label-caps text-label-caps text-primary">SLOTS</p>
+<p class="font-headline-md text-headline-md text-on-surface">32/64</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-primary">DATE</p>
+<p class="font-headline-md text-headline-md text-on-surface">24 JUL</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-primary">PRIZE</p>
+<p class="font-headline-md text-headline-md text-on-surface">R$ 5K</p>
+</div>
+</div>
+</main>
+<!-- Footer Component Simulation -->
+<footer class="w-full max-w-2xl mt-12 py-margin-desktop flex flex-col items-center gap-base border-t border-outline-variant">
+<div class="font-label-caps text-label-caps text-on-surface-variant">
+            © 2024 CHAMPIONSHIP X. ALL RIGHTS RESERVED.
+        </div>
+<div class="flex gap-margin-mobile mt-2">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary-container transition-colors" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary-container transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary-container transition-colors" href="#">Contact Support</a>
+</div>
+</footer>
+<script>
+        // Micro-interaction for the button glow effect
+        const button = document.querySelector('a');
+        button.addEventListener('mouseenter', () => {
+            button.style.boxShadow = "0 0 30px rgba(208, 188, 255, 0.4)";
+        });
+        button.addEventListener('mouseleave', () => {
+            button.style.boxShadow = "none";
+        });
+    </script>
+</body></html>

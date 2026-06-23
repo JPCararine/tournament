@@ -9,7 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Converte falhas de Bean Validation em 400 com mapa campo→mensagem. */
 @RestControllerAdvice
 public class ApiExceptionHandler {
 

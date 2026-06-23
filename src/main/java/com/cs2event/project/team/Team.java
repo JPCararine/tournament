@@ -19,12 +19,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Agregado raiz da inscrição de uma equipe no campeonato.
- *
- * <p>O status nasce como {@link TeamStatus#PENDENTE} e só pode ser promovido a
- * {@link TeamStatus#CONFIRMADA} pelo webhook de pagamento — nunca pelo front.</p>
- */
 @Entity
 @Table(name = "team")
 @Getter
@@ -51,11 +45,6 @@ public class Team {
     @Column(nullable = false)
     private String whatsapp;
 
-    /**
-     * Disponibilidade (ex.: "Segunda - Manhã"). Mapeada como @ElementCollection
-     * para portabilidade entre Postgres e bancos de teste. Alternativa: coluna jsonb
-     * via @JdbcTypeCode(SqlTypes.JSON) — ver README.
-     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "team_availability", joinColumns = @JoinColumn(name = "team_id"))
     @Column(name = "slot")
@@ -71,11 +60,15 @@ public class Team {
     @Column(nullable = false)
     private TeamStatus status = TeamStatus.PENDENTE;
 
-    /** Id da cobrança no AbacatePay — chave para casar com o webhook. */
     @Column(unique = true)
     private String billingId;
 
-    /** Valor da taxa de inscrição em centavos. */
+    @Column(columnDefinition = "text")
+    private String pixQrCodeBase64;
+
+    @Column(columnDefinition = "text")
+    private String pixBrCode;
+
     private Integer amountCents;
 
     @Column(nullable = false, updatable = false)

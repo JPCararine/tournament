@@ -6,6 +6,7 @@ import com.cs2event.project.team.TeamRepository;
 import com.cs2event.project.team.TeamStatus;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,13 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Recebe a confirmação de pagamento do AbacatePay (Fluxo B).
- *
- * <p>Valida o secret, é idempotente e só ele pode promover PENDENTE → CONFIRMADA.</p>
- */
 @RestController
-@RequestMapping("/api/webhooks/abacatepay")
+@RequestMapping("/webhooks/abacatepay")
 public class PaymentWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentWebhookController.class);
@@ -46,37 +42,38 @@ public class PaymentWebhookController {
             @RequestParam(name = "webhookSecret", required = false) String secretParam,
             @RequestHeader(name = "X-Webhook-Secret", required = false) String secretHeader,
             @RequestBody WebhookPayload payload) {
-
-        // 1) Autenticidade: aceita o secret via query param OU header.
+        System.out.println(payload);
         if (!isAuthentic(secretParam, secretHeader)) {
             log.warn("Webhook AbacatePay rejeitado: secret inválido/ausente");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // 2) Localiza a cobrança.
-        String billingId = payload == null ? null : payload.resolveBillingId();
-        if (!StringUtils.hasText(billingId)) {
-            log.warn("Webhook AbacatePay sem billingId reconhecível: {}", payload);
+        if (payload == null) {
+            log.warn("Webhook AbacatePay com corpo vazio");
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<Team> maybeTeam = teamRepository.findByBillingId(billingId);
+        String billingId = payload.resolveBillingId();
+        String externalId = payload.resolveExternalId();
+        Optional<Team> maybeTeam = findTeam(billingId, externalId);
         if (maybeTeam.isEmpty()) {
-            // Cobrança desconhecida — responde 200 para o gateway não ficar reenviando.
-            log.warn("Webhook AbacatePay: nenhuma equipe para billingId={}", billingId);
+            log.warn("Webhook AbacatePay: nenhuma equipe para billingId={} externalId={}", billingId, externalId);
+            return ResponseEntity.ok().build();
+        }
+
+        if (!payload.isPaid()) {
+            log.info("Webhook AbacatePay ignorado (evento não pago): event={} billingId={}",
+                    payload.event(), billingId);
             return ResponseEntity.ok().build();
         }
 
         Team team = maybeTeam.get();
-
-        // 3) Idempotência: já confirmada → no-op.
         if (team.getStatus() == TeamStatus.CONFIRMADA) {
-            log.info("Webhook AbacatePay duplicado para equipe '{}' (billingId={}) — ignorado",
+            log.info("Webhook AbacatePay duplicado para equipe '{}' (billingId={}) - ignorado",
                     team.getTeamName(), billingId);
             return ResponseEntity.ok().build();
         }
 
-        // 4) Promove PENDENTE → CONFIRMADA.
         team.setStatus(TeamStatus.CONFIRMADA);
         team.setConfirmedAt(Instant.now());
         teamRepository.save(team);
@@ -84,10 +81,26 @@ public class PaymentWebhookController {
         return ResponseEntity.ok().build();
     }
 
+    private Optional<Team> findTeam(String billingId, String externalId) {
+        if (StringUtils.hasText(billingId)) {
+            Optional<Team> byBilling = teamRepository.findByBillingId(billingId);
+            if (byBilling.isPresent()) {
+                return byBilling;
+            }
+        }
+        if (StringUtils.hasText(externalId)) {
+            try {
+                return teamRepository.findById(UUID.fromString(externalId.trim()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Webhook AbacatePay: externalId não é um UUID válido: {}", externalId);
+            }
+        }
+        return Optional.empty();
+    }
+
     private boolean isAuthentic(String secretParam, String secretHeader) {
         if (!StringUtils.hasText(webhookSecret)) {
-            // Configuração ausente: trata como bloqueio, nunca como liberação.
-            log.error("abacatepay.webhook-secret não configurado — rejeitando webhook");
+            log.error("abacatepay.webhook-secret não configurado - rejeitando webhook");
             return false;
         }
         return webhookSecret.equals(secretParam) || webhookSecret.equals(secretHeader);

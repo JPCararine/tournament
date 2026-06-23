@@ -4,10 +4,6 @@ import com.cs2event.project.team.Team;
 import com.cs2event.project.team.TeamStatus;
 import java.util.List;
 
-/**
- * Dashboard público (Fluxo C). Expõe apenas dados não sensíveis:
- * nome do time e status. Nunca e-mail, whatsapp, discord ou billingId.
- */
 public record DashboardResponse(
         List<TeamSummary> pendentes,
         List<TeamSummary> confirmadas,

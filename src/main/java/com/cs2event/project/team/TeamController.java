@@ -22,7 +22,6 @@ public class TeamController {
         this.teamService = teamService;
     }
 
-    /** Fluxo A — inscrição. Retorna 201 com id + status (PENDENTE). */
     @PostMapping
     public ResponseEntity<TeamRegistrationResponse> register(
             @Valid @RequestBody TeamRegistrationRequest request) {
@@ -31,7 +30,6 @@ public class TeamController {
                 .body(TeamRegistrationResponse.from(team));
     }
 
-    /** Fluxo C — dashboard público (apenas dados não sensíveis). */
     @GetMapping
     public DashboardResponse dashboard() {
         return teamService.dashboard();

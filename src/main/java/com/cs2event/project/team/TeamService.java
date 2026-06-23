@@ -13,10 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Orquestra o ciclo de inscrição: persiste PENDENTE → cria cobrança → envia e-mail,
- * e expõe a leitura pública do dashboard.
- */
 @Service
 public class TeamService {
 
@@ -34,15 +30,13 @@ public class TeamService {
         this.emailService = emailService;
     }
 
-    /**
-     * Registra a manifestação de interesse (Fluxo A).
-     *
-     * <p>A equipe é gravada como PENDENTE primeiro; em seguida cria-se a cobrança
-     * Pix e dispara-se o e-mail. Falha de e-mail não desfaz a inscrição.</p>
-     */
     @Transactional
     public Team register(TeamRegistrationRequest request) {
         Team team = new Team();
+        long confirmed = teamRepository.countByStatus(TeamStatus.CONFIRMADA);
+        if (confirmed >= 16) {
+            throw new RuntimeException("O número de inscritos chegou ao seu limite, agradecemos o seu interesse!");
+        }
         team.setTeamName(request.teamName());
         team.setCaptainName(request.captainName());
         team.setCaptainEmail(request.captainEmail());
@@ -58,10 +52,12 @@ public class TeamService {
         PixCharge charge = paymentService.createPixCharge(team);
         team.setBillingId(charge.billingId());
         team.setAmountCents(charge.amountCents());
+        team.setPixQrCodeBase64(charge.brCodeBase64());
+        team.setPixBrCode(charge.brCode());
         team = teamRepository.save(team);
 
-        // Falha de e-mail é tratada internamente (logada) e não aborta a inscrição.
-        emailService.sendInviteAndCharge(team, charge);
+        long confirmedCount = teamRepository.countByStatus(TeamStatus.CONFIRMADA);
+        emailService.sendInviteAndCharge(team, charge, confirmedCount);
 
         log.info("Equipe '{}' registrada como PENDENTE (id={}, billingId={})",
                 team.getTeamName(), team.getId(), team.getBillingId());

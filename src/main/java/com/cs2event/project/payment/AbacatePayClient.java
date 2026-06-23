@@ -2,7 +2,9 @@ package com.cs2event.project.payment;
 
 import com.cs2event.project.payment.dto.PixCharge;
 import com.cs2event.project.team.Team;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,22 +12,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/**
- * Adaptador HTTP para o AbacatePay. Concentra TODO o conhecimento do formato da
- * API do gateway — o restante da aplicação fala apenas em {@link PixCharge}.
- *
- * <p>[confirmar na doc AbacatePay] o endpoint exato de criação de cobrança Pix,
- * os nomes dos campos de request/response e o evento de webhook. Os valores
- * abaixo são os mais prováveis segundo a documentação pública; ajuste aqui
- * caso divirjam — nenhum outro arquivo precisa mudar.</p>
- */
 @Component
 public class AbacatePayClient {
 
     private static final Logger log = LoggerFactory.getLogger(AbacatePayClient.class);
-
-    /** [confirmar na doc] endpoint de criação de cobrança Pix dinâmica. */
-    private static final String CREATE_PIX_PATH = "/v1/pixQrCode/create";
+    private static final String CREATE_PIX_PATH = "/v2/transparents/create";
 
     private final RestClient restClient;
 
@@ -33,23 +24,13 @@ public class AbacatePayClient {
         this.restClient = restClient;
     }
 
-    /**
-     * Cria uma cobrança Pix dinâmica para a equipe.
-     *
-     * @throws AbacatePayException se a chamada falhar
-     */
     public PixCharge createPixCharge(Team team, int amountCents, String description) {
-        // [confirmar na doc] nomes dos campos do corpo da requisição.
-        Map<String, Object> body = Map.of(
-                "amount", amountCents,
-                "description", description,
-                "expiresIn", 3600,
-                "customer", Map.of(
-                        "name", team.getCaptainName(),
-                        "email", team.getCaptainEmail(),
-                        "cellphone", team.getWhatsapp()
-                )
-        );
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("amount", amountCents);
+        data.put("description", description);
+        data.put("expiresIn", 3600);
+        data.put("externalId", team.getId().toString());
+        Map<String, Object> body = Map.of("method", "PIX", "data", data);
 
         try {
             CreatePixResponse response = restClient.post()
@@ -61,12 +42,12 @@ public class AbacatePayClient {
             if (response == null || response.data() == null) {
                 throw new AbacatePayException("Resposta vazia do AbacatePay ao criar cobrança Pix");
             }
-            CreatePixResponse.Data data = response.data();
+            CreatePixResponse.Data data2 = response.data();
             return new PixCharge(
-                    data.id(),
-                    data.brCode(),
-                    data.brCodeBase64(),
-                    data.url(),
+                    data2.id(),
+                    data2.brCode(),
+                    data2.brCodeBase64(),
+                    data2.paymentUrl(),
                     amountCents
             );
         } catch (AbacatePayException e) {
@@ -77,12 +58,17 @@ public class AbacatePayClient {
         }
     }
 
-    /** [confirmar na doc] formato da resposta de criação de cobrança Pix. */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record CreatePixResponse(Data data) {
+    private record CreatePixResponse(Data data, boolean success, String error) {
 
         @JsonIgnoreProperties(ignoreUnknown = true)
-        private record Data(String id, String brCode, String brCodeBase64, String url) {
+        private record Data(
+                String id,
+                String brCode,
+                String brCodeBase64,
+                @JsonAlias({"receiptUrl", "url", "checkoutUrl", "checkoutLink", "paymentUrl"}) String paymentUrl,
+                String status
+        ) {
         }
     }
 
