@@ -5,6 +5,7 @@ import com.cs2event.project.team.RegistrationClosedException;
 import com.cs2event.project.payment.AsaasClient;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -31,6 +32,13 @@ public class ApiExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleDuplicate(DuplicateRegistrationException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", "Ja existe uma inscricao com estes dados.");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 

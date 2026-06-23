@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "team")
+@Table(name = "team", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_team_name", columnNames = "team_name"),
+        @UniqueConstraint(name = "uk_team_captain_email", columnNames = "captain_email"),
+        @UniqueConstraint(name = "uk_team_captain_discord_id", columnNames = "captain_discord_id"),
+        @UniqueConstraint(name = "uk_team_whatsapp", columnNames = "whatsapp")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,19 +36,19 @@ public class Team {
     @GeneratedValue
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "team_name", nullable = false)
     private String teamName;
 
     @Column(nullable = false)
     private String captainName;
 
-    @Column(nullable = false)
+    @Column(name = "captain_email", nullable = false)
     private String captainEmail;
 
-    @Column(nullable = false)
+    @Column(name = "captain_discord_id", nullable = false)
     private String captainDiscordId;
 
-    @Column(nullable = false)
+    @Column(name = "whatsapp", nullable = false)
     private String whatsapp;
 
     @ElementCollection(fetch = FetchType.EAGER)
