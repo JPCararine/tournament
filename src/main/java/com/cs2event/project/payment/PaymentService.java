@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class PaymentService {
 
+    private static final int ASAAS_PIX_DESCRIPTION_MAX_LENGTH = 37;
+    private static final String PIX_DESCRIPTION_PREFIX = "Inscricao CS2 - ";
+
     private final AsaasClient asaasClient;
     private final int amountCents;
 
@@ -18,7 +21,14 @@ public class PaymentService {
     }
 
     public PixCharge createPixCharge(Team team) {
-        String description = "Taxa de inscrição - Campeonato CS2 - " + team.getTeamName();
+        String description = truncateDescription(PIX_DESCRIPTION_PREFIX + team.getTeamName());
         return asaasClient.createPixCharge(team, amountCents, description);
+    }
+
+    private String truncateDescription(String description) {
+        if (description.length() <= ASAAS_PIX_DESCRIPTION_MAX_LENGTH) {
+            return description;
+        }
+        return description.substring(0, ASAAS_PIX_DESCRIPTION_MAX_LENGTH);
     }
 }
