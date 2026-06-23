@@ -22,6 +22,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final String fromEmail;
     private final String publicBaseUrl;
+    private final String paymentPageBaseUrl;
     private final String championshipName;
     private final int maxTeams;
     private final String tournamentDate;
@@ -31,6 +32,7 @@ public class EmailService {
     public EmailService(JavaMailSender mailSender,
                         @Value("${sendgrid.from-email:noreply@example.com}") String fromEmail,
                         @Value("${app.public-base-url:http://localhost:8080}") String publicBaseUrl,
+                        @Value("${app.payment-page-base-url:}") String paymentPageBaseUrl,
                         @Value("${app.tournament.name:Campeonato}") String championshipName,
                         @Value("${app.tournament.max-teams:16}") int maxTeams,
                         @Value("${app.tournament.date:A definir}") String tournamentDate,
@@ -39,6 +41,7 @@ public class EmailService {
         this.mailSender = mailSender;
         this.fromEmail = fromEmail;
         this.publicBaseUrl = publicBaseUrl;
+        this.paymentPageBaseUrl = paymentPageBaseUrl;
         this.championshipName = championshipName;
         this.maxTeams = maxTeams;
         this.tournamentDate = tournamentDate;
@@ -143,6 +146,9 @@ public class EmailService {
     }
 
     private String paymentUrl(Team team) {
+        if (paymentPageBaseUrl != null && !paymentPageBaseUrl.isBlank()) {
+            return trimTrailingSlash(paymentPageBaseUrl) + "/" + team.getBillingId();
+        }
         return trimTrailingSlash(publicBaseUrl) + "/api/payments/" + team.getBillingId();
     }
 

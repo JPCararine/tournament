@@ -8,12 +8,14 @@ Este documento descreve o que o frontend precisa fazer depois da mudanca do paga
 2. O frontend chama `POST /api/teams`.
 3. O backend cria a cobranca Pix no Asaas, salva QR Code/copia-e-cola e envia um e-mail ao capitao.
 4. O e-mail contem apenas um link de pagamento.
-5. O link abre uma pagina do backend em `GET /api/payments/{billingId}` com:
-   - imagem do QR Code Pix;
+5. Em producao, esse link deve apontar para a rota de pagamento do frontend.
+6. A rota do frontend busca os dados no backend em `GET /api/payments/{billingId}` com `Accept: application/json`.
+7. O backend retorna:
+   - status do pagamento;
    - codigo Pix copia-e-cola;
-   - botao do Discord.
-6. O frontend nao precisa renderizar QR Code nem copia-e-cola.
-7. O status do time muda para `CONFIRMADA` apenas quando o webhook do Asaas confirma o pagamento.
+   - link do Discord.
+8. A imagem do QR Code vem de `GET /api/payments/{billingId}/qr.png`, somente enquanto o pagamento estiver pendente.
+9. O status do time muda para `CONFIRMADA` apenas quando o webhook do Asaas confirma o pagamento.
 
 ## Variavel Do Front
 
@@ -27,6 +29,18 @@ Em desenvolvimento:
 
 ```env
 VITE_API_URL=http://localhost:8080
+```
+
+No backend, configure a base da rota de pagamento do frontend:
+
+```env
+PAYMENT_PAGE_BASE_URL=https://site.seu-dominio.com/pagamento
+```
+
+O e-mail vai montar o link assim:
+
+```txt
+{PAYMENT_PAGE_BASE_URL}/{billingId}
 ```
 
 ## Endpoint De Inscricao
@@ -225,36 +239,96 @@ Uso recomendado:
 - Se `registrationOpen` for `false`, desabilitar ou esconder o formulario.
 - Atualizar o dashboard periodicamente, por exemplo a cada 30 segundos.
 
-## Pagina De Pagamento
+## Pagina De Pagamento No Frontend
 
-O frontend nao precisa consumir este endpoint diretamente no fluxo normal. Ele existe para o link enviado por e-mail:
+O e-mail deve apontar para uma rota do frontend, por exemplo:
+
+```txt
+https://site.seu-dominio.com/pagamento/{billingId}
+```
+
+Nessa tela, o frontend deve buscar os dados no backend:
 
 ```http
 GET /api/payments/{billingId}
+Accept: application/json
 ```
 
-Essa pagina e HTML renderizado pelo backend e mostra:
+### Response `200` - pendente
 
-- QR Code Pix;
-- Pix copia-e-cola;
-- link do Discord.
+```json
+{
+  "status": "PENDENTE",
+  "copyPaste": "000201...",
+  "discordUrl": "https://discord.gg/seu-convite",
+  "teamName": "SG TEAM"
+}
+```
 
-Tambem existe o PNG do QR Code:
+### Response `200` - confirmado
+
+```json
+{
+  "status": "CONFIRMADA",
+  "copyPaste": null,
+  "discordUrl": "https://discord.gg/seu-convite",
+  "teamName": "SG TEAM"
+}
+```
+
+Quando `status === "CONFIRMADA"`, nao mostrar QR Code nem copia-e-cola. Mostre uma tela de pagamento ja confirmado e o botao do Discord.
+
+### QR Code PNG
+
+Use o endpoint abaixo para a imagem quando `status === "PENDENTE"`:
 
 ```http
 GET /api/payments/{billingId}/qr.png
 ```
 
-O frontend nao recebe `billingId` no `POST /api/teams`, entao nao deve montar essa URL manualmente.
+Se o time ja estiver `CONFIRMADA`, esse endpoint retorna `404` para evitar exibir QR Code pago.
+
+### Exemplo De Loader Da Pagina
+
+```ts
+export async function carregarPagamento(billingId: string) {
+  const response = await fetch(`${API_URL}/api/payments/${billingId}`, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (response.status === 404) {
+    throw { type: "not_found", message: "Pagamento nao encontrado." };
+  }
+
+  if (!response.ok) {
+    throw { type: "unknown", message: "Nao foi possivel carregar o pagamento." };
+  }
+
+  return response.json() as Promise<{
+    status: "PENDENTE" | "CONFIRMADA";
+    copyPaste: string | null;
+    discordUrl: string;
+    teamName: string;
+  }>;
+}
+```
+
+O frontend nao recebe `billingId` no `POST /api/teams`. Ele chega ao usuario pelo link do e-mail.
 
 ## Checklist Para O Front
 
 - Usar `POST /api/teams` no formulario.
 - Ao sucesso, mostrar mensagem para checar o e-mail.
 - Nao esperar QR Code na resposta da inscricao.
+- Criar rota publica no frontend para `/pagamento/:billingId` ou equivalente.
+- Configurar `PAYMENT_PAGE_BASE_URL` no backend apontando para essa rota.
+- Na rota de pagamento, buscar `GET /api/payments/{billingId}` com `Accept: application/json`.
+- Usar `/api/payments/{billingId}/qr.png` como `src` da imagem somente se `status === "PENDENTE"`.
+- Se `status === "CONFIRMADA"`, mostrar pagamento confirmado e nao renderizar QR Code.
 - Nao chamar Asaas pelo frontend.
 - Tratar `400`, `409` e `502` separadamente.
 - Usar `GET /api/teams` para dashboard.
 - Bloquear inscricao quando `registrationOpen` for `false`.
 - Garantir que `VITE_API_URL` aponta para o backend correto.
-
