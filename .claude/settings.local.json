@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(.\\\\mvnw.cmd -q -B test 2>&1 | Select-Object -Last 60)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; .\\\\mvnw.cmd -q -B test 2>&1 | Select-Object -Last 70)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; .\\\\mvnw.cmd -q -B test 2>&1 | Select-Object -Last 40)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; .\\\\mvnw.cmd -q -B test 2>&1 | Select-String -Pattern \"BUILD SUCCESS|BUILD FAILURE|Tests run\")",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr\"; .\\\\mvnw.cmd -B test 2>&1 | Select-String -Pattern \"BUILD SUCCESS|BUILD FAILURE|Tests run:\"; Write-Output \"ExitCode=$LASTEXITCODE\")"
+    ]
+  }
+}
