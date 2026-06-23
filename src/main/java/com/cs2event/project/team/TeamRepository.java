@@ -1,5 +1,6 @@
 package com.cs2event.project.team;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,4 +13,14 @@ public interface TeamRepository extends JpaRepository<Team, UUID> {
     List<Team> findByStatusOrderByCreatedAtAsc(TeamStatus status);
 
     long countByStatus(TeamStatus status);
+
+    boolean existsByTeamNameIgnoreCase(String teamName);
+
+    boolean existsByCaptainEmailIgnoreCase(String captainEmail);
+
+    boolean existsByCaptainDiscordIdIgnoreCase(String captainDiscordId);
+
+    boolean existsByWhatsapp(String whatsapp);
+
+    List<Team> findByStatusAndCreatedAtBefore(TeamStatus status, Instant threshold);
 }

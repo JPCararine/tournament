@@ -22,18 +22,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/webhooks/abacatepay")
+@RequestMapping("/webhooks/asaas")
 public class PaymentWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentWebhookController.class);
 
     private final TeamRepository teamRepository;
-    private final String webhookSecret;
+    private final String webhookToken;
 
     public PaymentWebhookController(TeamRepository teamRepository,
-                                    @Value("${abacatepay.webhook-secret}") String webhookSecret) {
+                                    @Value("${asaas.webhook-token}") String webhookToken) {
         this.teamRepository = teamRepository;
-        this.webhookSecret = webhookSecret;
+        this.webhookToken = webhookToken;
     }
 
     @PostMapping
@@ -41,15 +41,15 @@ public class PaymentWebhookController {
     public ResponseEntity<Void> handle(
             @RequestParam(name = "webhookSecret", required = false) String secretParam,
             @RequestHeader(name = "X-Webhook-Secret", required = false) String secretHeader,
+            @RequestHeader(name = "asaas-access-token", required = false) String asaasAccessToken,
             @RequestBody WebhookPayload payload) {
-        System.out.println(payload);
-        if (!isAuthentic(secretParam, secretHeader)) {
-            log.warn("Webhook AbacatePay rejeitado: secret inválido/ausente");
+        if (!isAuthentic(asaasAccessToken, secretHeader, secretParam)) {
+            log.warn("Webhook Asaas rejeitado: token invalido/ausente");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         if (payload == null) {
-            log.warn("Webhook AbacatePay com corpo vazio");
+            log.warn("Webhook Asaas com corpo vazio");
             return ResponseEntity.badRequest().build();
         }
 
@@ -57,19 +57,19 @@ public class PaymentWebhookController {
         String externalId = payload.resolveExternalId();
         Optional<Team> maybeTeam = findTeam(billingId, externalId);
         if (maybeTeam.isEmpty()) {
-            log.warn("Webhook AbacatePay: nenhuma equipe para billingId={} externalId={}", billingId, externalId);
+            log.warn("Webhook Asaas: nenhuma equipe para billingId={} externalReference={}", billingId, externalId);
             return ResponseEntity.ok().build();
         }
 
         if (!payload.isPaid()) {
-            log.info("Webhook AbacatePay ignorado (evento não pago): event={} billingId={}",
+            log.info("Webhook Asaas ignorado (evento nao pago): event={} billingId={}",
                     payload.event(), billingId);
             return ResponseEntity.ok().build();
         }
 
         Team team = maybeTeam.get();
         if (team.getStatus() == TeamStatus.CONFIRMADA) {
-            log.info("Webhook AbacatePay duplicado para equipe '{}' (billingId={}) - ignorado",
+            log.info("Webhook Asaas duplicado para equipe '{}' (billingId={}) - ignorado",
                     team.getTeamName(), billingId);
             return ResponseEntity.ok().build();
         }
@@ -77,7 +77,7 @@ public class PaymentWebhookController {
         team.setStatus(TeamStatus.CONFIRMADA);
         team.setConfirmedAt(Instant.now());
         teamRepository.save(team);
-        log.info("Equipe '{}' CONFIRMADA via webhook (billingId={})", team.getTeamName(), billingId);
+        log.info("Equipe '{}' CONFIRMADA via webhook Asaas (billingId={})", team.getTeamName(), billingId);
         return ResponseEntity.ok().build();
     }
 
@@ -92,17 +92,19 @@ public class PaymentWebhookController {
             try {
                 return teamRepository.findById(UUID.fromString(externalId.trim()));
             } catch (IllegalArgumentException e) {
-                log.warn("Webhook AbacatePay: externalId não é um UUID válido: {}", externalId);
+                log.warn("Webhook Asaas: externalReference nao e um UUID valido: {}", externalId);
             }
         }
         return Optional.empty();
     }
 
-    private boolean isAuthentic(String secretParam, String secretHeader) {
-        if (!StringUtils.hasText(webhookSecret)) {
-            log.error("abacatepay.webhook-secret não configurado - rejeitando webhook");
+    private boolean isAuthentic(String asaasAccessToken, String secretHeader, String secretParam) {
+        if (!StringUtils.hasText(webhookToken)) {
+            log.error("asaas.webhook-token nao configurado - rejeitando webhook");
             return false;
         }
-        return webhookSecret.equals(secretParam) || webhookSecret.equals(secretHeader);
+        return webhookToken.equals(asaasAccessToken)
+                || webhookToken.equals(secretHeader)
+                || webhookToken.equals(secretParam);
     }
 }

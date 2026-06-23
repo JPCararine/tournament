@@ -2,6 +2,7 @@ package com.cs2event.project.payment;
 
 import com.cs2event.project.team.Team;
 import com.cs2event.project.team.TeamRepository;
+import com.cs2event.project.team.TeamStatus;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,15 +33,36 @@ public class PaymentQrController {
     private static final int QR_CODE_SIZE = 320;
 
     private final TeamRepository teamRepository;
+    private final String discordInviteUrl;
 
-    public PaymentQrController(TeamRepository teamRepository) {
+    public PaymentQrController(TeamRepository teamRepository,
+                               @Value("${app.discord-invite-url:#}") String discordInviteUrl) {
         this.teamRepository = teamRepository;
+        this.discordInviteUrl = discordInviteUrl;
+    }
+
+    @GetMapping(value = "/{billingId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentDetailsResponse> paymentDetails(@PathVariable String billingId) {
+        Optional<Team> maybeTeam = teamRepository.findByBillingId(billingId);
+        if (maybeTeam.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Team team = maybeTeam.get();
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noCache())
+                .body(new PaymentDetailsResponse(
+                        team.getStatus(),
+                        team.getStatus() == TeamStatus.CONFIRMADA ? null : team.getPixBrCode(),
+                        defaultUrl(discordInviteUrl),
+                        team.getTeamName()
+                ));
     }
 
     @GetMapping("/{billingId}/qr.png")
     public ResponseEntity<byte[]> qrCode(@PathVariable String billingId) {
         Optional<Team> maybeTeam = teamRepository.findByBillingId(billingId);
-        if (maybeTeam.isEmpty()) {
+        if (maybeTeam.isEmpty() || maybeTeam.get().getStatus() == TeamStatus.CONFIRMADA) {
             return ResponseEntity.notFound().build();
         }
 
@@ -76,5 +99,17 @@ public class PaymentQrController {
             log.error("Falha ao gerar QR Code PIX para o brCode informado", e);
             return new byte[0];
         }
+    }
+
+    private String defaultUrl(String url) {
+        return StringUtils.hasText(url) ? url.trim() : "#";
+    }
+
+    public record PaymentDetailsResponse(
+            TeamStatus status,
+            String copyPaste,
+            String discordUrl,
+            String teamName
+    ) {
     }
 }

@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,27 +22,40 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final PaymentService paymentService;
     private final EmailService emailService;
+    private final PendingTeamCleanupService pendingTeamCleanupService;
+    private final int maxTeams;
 
     public TeamService(TeamRepository teamRepository,
                        PaymentService paymentService,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       PendingTeamCleanupService pendingTeamCleanupService,
+                       @Value("${app.tournament.max-teams}") int maxTeams) {
         this.teamRepository = teamRepository;
         this.paymentService = paymentService;
         this.emailService = emailService;
+        this.pendingTeamCleanupService = pendingTeamCleanupService;
+        this.maxTeams = maxTeams;
     }
 
     @Transactional
     public Team register(TeamRegistrationRequest request) {
+        pendingTeamCleanupService.removeExpiredPendingTeams();
+
         Team team = new Team();
-        long confirmed = teamRepository.countByStatus(TeamStatus.CONFIRMADA);
-        if (confirmed >= 16) {
-            throw new RuntimeException("O número de inscritos chegou ao seu limite, agradecemos o seu interesse!");
+        // Cada equipe — pendente ou confirmada — ocupa uma vaga. Ao atingir o
+        // limite, as inscrições ficam travadas. Pendentes não pagas expiram e
+        // liberam a vaga automaticamente, reabrindo o sistema.
+        long occupiedSlots = teamRepository.count();
+        if (occupiedSlots >= maxTeams) {
+            throw new RegistrationClosedException(
+                    "O número de inscritos chegou ao seu limite, agradecemos o seu interesse!");
         }
-        team.setTeamName(request.teamName());
-        team.setCaptainName(request.captainName());
-        team.setCaptainEmail(request.captainEmail());
-        team.setCaptainDiscordId(request.captainDiscordId());
-        team.setWhatsapp(request.whatsapp());
+        validateNoDuplicate(request);
+        team.setTeamName(request.teamName().trim());
+        team.setCaptainName(request.captainName().trim());
+        team.setCaptainEmail(request.captainEmail().trim());
+        team.setCaptainDiscordId(request.captainDiscordId().trim());
+        team.setWhatsapp(request.whatsapp().trim());
         team.setAvailability(request.availability());
         team.setObservations(request.observations());
         team.setTermsAccepted(request.termsAccepted());
@@ -57,11 +71,35 @@ public class TeamService {
         team = teamRepository.save(team);
 
         long confirmedCount = teamRepository.countByStatus(TeamStatus.CONFIRMADA);
-        emailService.sendInviteAndCharge(team, charge, confirmedCount);
+        emailService.sendInviteAndCharge(team, confirmedCount);
 
         log.info("Equipe '{}' registrada como PENDENTE (id={}, billingId={})",
                 team.getTeamName(), team.getId(), team.getBillingId());
         return team;
+    }
+
+    /**
+     * Garante que nenhum dado identificador da inscrição já esteja em uso por
+     * outra equipe — pendente ou confirmada. Equipes pendentes que expiraram
+     * são removidas automaticamente, liberando o dado para uma nova inscrição.
+     */
+    private void validateNoDuplicate(TeamRegistrationRequest request) {
+        if (teamRepository.existsByTeamNameIgnoreCase(request.teamName().trim())) {
+            throw new DuplicateRegistrationException(
+                    "Já existe uma equipe inscrita com este nome.");
+        }
+        if (teamRepository.existsByCaptainEmailIgnoreCase(request.captainEmail().trim())) {
+            throw new DuplicateRegistrationException(
+                    "Este e-mail já foi utilizado em uma inscrição.");
+        }
+        if (teamRepository.existsByCaptainDiscordIdIgnoreCase(request.captainDiscordId().trim())) {
+            throw new DuplicateRegistrationException(
+                    "Este Discord já foi utilizado em uma inscrição.");
+        }
+        if (teamRepository.existsByWhatsapp(request.whatsapp().trim())) {
+            throw new DuplicateRegistrationException(
+                    "Este WhatsApp já foi utilizado em uma inscrição.");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -72,6 +110,9 @@ public class TeamService {
         List<TeamSummary> confirmadas = teamRepository
                 .findByStatusOrderByCreatedAtAsc(TeamStatus.CONFIRMADA)
                 .stream().map(TeamSummary::from).toList();
-        return new DashboardResponse(pendentes, confirmadas, pendentes.size(), confirmadas.size());
+        long occupiedSlots = (long) pendentes.size() + confirmadas.size();
+        boolean registrationOpen = occupiedSlots < maxTeams;
+        return new DashboardResponse(pendentes, confirmadas,
+                pendentes.size(), confirmadas.size(), maxTeams, registrationOpen);
     }
 }
