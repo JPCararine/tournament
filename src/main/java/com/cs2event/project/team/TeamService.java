@@ -71,7 +71,7 @@ public class TeamService {
         team = teamRepository.save(team);
 
         long confirmedCount = teamRepository.countByStatus(TeamStatus.CONFIRMADA);
-        emailService.sendInviteAndCharge(team, charge, confirmedCount);
+        emailService.sendInviteAndCharge(team, confirmedCount);
 
         log.info("Equipe '{}' registrada como PENDENTE (id={}, billingId={})",
                 team.getTeamName(), team.getId(), team.getBillingId());
