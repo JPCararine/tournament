@@ -1,0 +1,12 @@
+target/
+.git/
+.idea/
+.vscode/
+.mvn/wrapper/maven-wrapper.jar
+*.iml
+.env
+email-preview*.html
+email-preview*.png
+template-email-extracted/
+template-email.zip
+HELP.md

@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# Stack de deploy: aplicação Spring Boot + banco MySQL.
+#
+# Uso:
+#   1. Copie .env.example para .env e preencha os segredos.
+#   2. docker compose up -d --build
+#
+# As credenciais do banco e os segredos vêm do arquivo .env (não versionado).
+# ---------------------------------------------------------------------------
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DATABASE_NAME:-tournament}
+      MYSQL_USER: ${DATABASE_USERNAME:-sgtourcs2}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-sgtourcs2}
+      MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD:-rootpass}
+    # Sem mapeamento de porta para o host: o banco só é acessível pela rede
+    # interna do compose (serviço "db"). Para acesso externo/admin, descomente:
+    # ports:
+    #   - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DATABASE_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Sobrescreve o host do banco para o nome do serviço dentro da rede do compose.
+      DATABASE_URL: jdbc:mysql://db:3306/${DATABASE_NAME:-tournament}
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:
