@@ -8,17 +8,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class PaymentService {
 
-    private final AbacatePayClient abacatePayClient;
+    private final AsaasClient asaasClient;
     private final int amountCents;
 
-    public PaymentService(AbacatePayClient abacatePayClient,
-                          @Value("${abacatepay.amount-cents}") int amountCents) {
-        this.abacatePayClient = abacatePayClient;
+    public PaymentService(AsaasClient asaasClient,
+                          @Value("${asaas.amount-cents}") int amountCents) {
+        this.asaasClient = asaasClient;
         this.amountCents = amountCents;
     }
 
     public PixCharge createPixCharge(Team team) {
         String description = "Taxa de inscrição - Campeonato CS2 - " + team.getTeamName();
-        return abacatePayClient.createPixCharge(team, amountCents, description);
+        return asaasClient.createPixCharge(team, amountCents, description);
     }
 }

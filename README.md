@@ -2,21 +2,21 @@
 
 API pública (sem login) para manifestação de interesse e confirmação de equipes no
 Campeonato de Counter-Strike 2. Preencher o formulário **não garante vaga**: a vaga só é
-**CONFIRMADA** após o pagamento da taxa de inscrição (Pix via AbacatePay), na ordem em que
+**CONFIRMADA** após o pagamento da taxa de inscrição (Pix via Asaas), na ordem em que
 os pagamentos são recebidos.
 
 ## Jornada
 
 1. Capitão envia o formulário → equipe gravada como **PENDENTE**.
-2. Backend cria uma cobrança Pix no **AbacatePay**.
+2. Backend cria um QR Code Pix estatico no **Asaas**.
 3. Backend envia e-mail (**SendGrid**) ao capitão com link do Discord + QR-code/copia-e-cola.
 4. Capitão paga o Pix.
-5. AbacatePay chama o webhook → equipe passa para **CONFIRMADA**.
+5. Asaas chama o webhook → equipe passa para **CONFIRMADA**.
 
 ## Stack
 
 - Spring Boot 4.1 / Java 21, Spring Web MVC + Spring Data JPA (PostgreSQL).
-- Cliente HTTP `RestClient` para o AbacatePay; `sendgrid-java` para e-mail.
+- Cliente HTTP `RestClient` para o Asaas; `sendgrid-java` para e-mail.
 
 ## Variáveis de ambiente
 
@@ -25,10 +25,11 @@ os pagamentos são recebidos.
 | `DATABASE_URL` | sim | JDBC do Postgres, ex.: `jdbc:postgresql://host:5432/db` (Supabase/Neon) |
 | `DATABASE_USERNAME` | sim* | Usuário do banco (se não embutido na URL) |
 | `DATABASE_PASSWORD` | sim* | Senha do banco (se não embutida na URL) |
-| `ABACATEPAY_API_URL` | não | Base URL da API (default `https://api.abacatepay.com`) |
-| `ABACATEPAY_TOKEN` | sim | Bearer token do AbacatePay |
-| `ABACATEPAY_WEBHOOK_SECRET` | sim | Secret usado para validar o webhook |
-| `ABACATEPAY_AMOUNT_CENTS` | não | Taxa de inscrição em centavos (default `5000` = R$ 50,00) |
+| `ASAAS_API_URL` | não | Base URL da API (default `https://api-sandbox.asaas.com`) |
+| `ASAAS_API_KEY` | sim | API key enviada no header `access_token` |
+| `ASAAS_WEBHOOK_TOKEN` | sim | Token usado para validar o header `asaas-access-token` do webhook |
+| `ASAAS_PIX_KEY` | sim | Chave Pix que recebera os pagamentos do QR Code |
+| `ASAAS_AMOUNT_CENTS` | não | Taxa de inscrição em centavos (default `5000` = R$ 50,00) |
 | `SENDGRID_API_KEY` | sim | API key do SendGrid |
 | `SENDGRID_FROM_EMAIL` | sim | Remetente verificado no SendGrid |
 | `DISCORD_INVITE_URL` | sim | Link de convite do Discord da organização |
@@ -86,20 +87,20 @@ Expõe apenas dados não sensíveis (nunca e-mail, whatsapp, discord ou billingI
 }
 ```
 
-### POST `/api/webhooks/abacatepay` — confirmação de pagamento
+### POST `/webhooks/asaas` — confirmação de pagamento
 
-- Autenticidade obrigatória: secret via query param `?webhookSecret=...` **ou** header
-  `X-Webhook-Secret`. Secret inválido/ausente → `401`.
+- Autenticidade obrigatória: token no header `asaas-access-token`.
+  Token inválido/ausente → `401`.
 - Idempotente: reenvio do mesmo evento não reconfirma nem reenvia e-mail.
 - Apenas este endpoint promove `PENDENTE → CONFIRMADA` (nunca o front).
 
-## Notas de integração (AbacatePay)
+## Notas de integração (Asaas)
 
-Os nomes exatos de endpoint/campos do AbacatePay estão centralizados em
-`payment/AbacatePayClient.java` e marcados com `[confirmar na doc AbacatePay]`. Caso a
-documentação oficial divirja (endpoint de criação da cobrança, formato do payload do
-webhook, nome do evento de pagamento confirmado), ajuste **apenas** essa classe — o
-restante da aplicação fala em termos do record `PixCharge`.
+A criacao do QR Code estatico esta centralizada em `payment/AsaasClient.java`, usando
+`POST /v3/pix/qrCodes/static` com `addressKey`, `value`, `format=ALL`,
+`expirationSeconds`, `allowsMultiplePayments=false` e `externalReference` com o UUID da
+equipe. O webhook aceita `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED`; para QR Code estatico,
+o id salvo em `billingId` vem de `payment.pixQrCodeId`.
 
 ## Persistência de `availability`
 

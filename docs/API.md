@@ -20,8 +20,8 @@ endpoints.
 ### Fluxo completo
 
 1. **Fluxo A** — usuário preenche o formulário no site → `POST /api/teams` → time gravado
-   como `PENDENTE`, cobrança Pix criada no AbacatePay e e-mail enviado ao capitão.
-2. **Fluxo B** — capitão paga o Pix → AbacatePay chama `POST /webhooks/abacatepay` →
+   como `PENDENTE`, QR Code Pix estatico criado no Asaas e e-mail enviado ao capitão.
+2. **Fluxo B** — capitão paga o Pix → Asaas chama `POST /webhooks/asaas` →
    time promovido para `CONFIRMADA`.
 3. **Fluxo C** — o site exibe o painel público → `GET /api/teams` → listas de times
    pendentes e confirmados.
@@ -100,7 +100,7 @@ Não retorna dados sensíveis — apenas o id e o status.
 
 ### Resposta `500 Internal Server Error`
 
-Falha ao criar a cobrança no AbacatePay (gateway fora do ar, token inválido, etc.).
+Falha ao criar o QR Code Pix no Asaas (gateway fora do ar, token inválido, etc.).
 A falha de **e-mail** não gera 500 — a inscrição é mantida como `PENDENTE` e o erro é
 apenas logado.
 
@@ -177,38 +177,44 @@ async function carregarDashboard() {
 
 ---
 
-## 3. Webhook de pagamento (Fluxo B) — uso interno do AbacatePay
+## 3. Webhook de pagamento (Fluxo B) — uso interno do Asaas
 
-> **Atenção:** este endpoint **não é chamado pelo frontend**. Quem chama é o AbacatePay,
+> **Atenção:** este endpoint **não é chamado pelo frontend**. Quem chama é o Asaas,
 > servidor-para-servidor, quando o pagamento é confirmado. Documentado aqui apenas para
 > referência/configuração.
 
 ```
-POST /webhooks/abacatepay?webhookSecret=SEU_SECRET
+POST /webhooks/asaas
 Content-Type: application/json
+asaas-access-token: SEU_ASAAS_WEBHOOK_TOKEN
 ```
 
-A autenticidade é validada pelo secret, aceito via query param `webhookSecret`
-**ou** header `X-Webhook-Secret`. O endpoint é **idempotente**: reenvios do mesmo
+A autenticidade é validada pelo token do header `asaas-access-token`.
+O endpoint é **idempotente**: reenvios do mesmo
 pagamento não duplicam a confirmação.
 
-### Configuração no painel do AbacatePay
+### Configuração no painel do Asaas
 
-URL a cadastrar (com o secret na query e o ngrok apontando para `localhost:8080`):
+URL a cadastrar (com o ngrok apontando para `localhost:8080`):
 
 ```
-https://SEU-SUBDOMINIO.ngrok-free.dev/webhooks/abacatepay?webhookSecret=SEU_SECRET
+https://SEU-SUBDOMINIO.ngrok-free.dev/webhooks/asaas
 ```
 
-### Corpo (tolerante a variações)
+### Corpo esperado
 
-O id da cobrança é resolvido procurando, nesta ordem: `billingId`, `data.billingId`,
-`data.pixQrCode.id`, `data.id`.
+Para QR Code estatico, o Asaas envia o id do QR pago em `payment.pixQrCodeId`.
+O `externalReference` recebe o UUID da equipe gravado na criacao do QR Code.
 
 ```json
 {
-  "event": "billing.paid",
-  "data": { "pixQrCode": { "id": "pix_char_abc123", "status": "PAID" } }
+  "event": "PAYMENT_RECEIVED",
+  "payment": {
+    "id": "pay_080225913252",
+    "status": "RECEIVED",
+    "pixQrCodeId": "9bea9bcd126b45c7939960f577be84d6",
+    "externalReference": "d8fe7943-eb7f-440b-a422-5d64d21fe503"
+  }
 }
 ```
 
@@ -217,8 +223,8 @@ O id da cobrança é resolvido procurando, nesta ordem: `billingId`, `data.billi
 | Código | Quando |
 |--------|--------|
 | `200 OK` | Confirmado, ou já estava confirmado (idempotente), ou cobrança desconhecida (para o gateway parar de reenviar). |
-| `400 Bad Request` | Payload sem id de cobrança reconhecível. |
-| `401 Unauthorized` | Secret ausente ou inválido. |
+| `400 Bad Request` | Payload vazio. |
+| `401 Unauthorized` | Token ausente ou inválido. |
 
 ---
 
@@ -403,7 +409,7 @@ export function Dashboard() {
 |--------|------|-----------|-----------|
 | `POST` | `/api/teams` | Frontend | Inscreve equipe (Fluxo A) |
 | `GET` | `/api/teams` | Frontend | Dashboard público (Fluxo C) |
-| `POST` | `/webhooks/abacatepay` | AbacatePay | Confirma pagamento (Fluxo B) |
+| `POST` | `/webhooks/asaas` | Asaas | Confirma pagamento (Fluxo B) |
 
 ---
 
@@ -416,7 +422,7 @@ $env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot"
 ```
 
 Variáveis de ambiente (arquivo `.env` na raiz): `DATABASE_URL`, `DATABASE_USERNAME`,
-`DATABASE_PASSWORD`, `ABACATEPAY_TOKEN`, `ABACATEPAY_WEBHOOK_SECRET`, `SENDGRID_API_KEY`,
+`DATABASE_PASSWORD`, `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `ASAAS_PIX_KEY`, `SENDGRID_API_KEY`,
 `SENDGRID_FROM_EMAIL`, `DISCORD_INVITE_URL`, `CORS_ALLOWED_ORIGINS`.
 
 Configurações do campeonato (em `application.properties`): `app.tournament.name`,

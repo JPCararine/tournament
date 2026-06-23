@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Remove automaticamente as equipes que continuam PENDENTES após o prazo de
- * expiração da cobrança Pix (o mesmo {@code expiresIn} enviado ao AbacatePay e
+ * expiração da cobrança Pix (o mesmo {@code expirationSeconds} enviado ao Asaas e
  * exibido no e-mail). Equipes CONFIRMADA nunca são removidas — ficam
  * persistidas para sempre.
  */
@@ -24,7 +24,7 @@ public class PendingTeamCleanupService {
     private final int pixExpiresSeconds;
 
     public PendingTeamCleanupService(TeamRepository teamRepository,
-                                     @Value("${abacatepay.pix-expires-seconds}") int pixExpiresSeconds) {
+                                     @Value("${asaas.pix-expires-seconds}") int pixExpiresSeconds) {
         this.teamRepository = teamRepository;
         this.pixExpiresSeconds = pixExpiresSeconds;
     }
