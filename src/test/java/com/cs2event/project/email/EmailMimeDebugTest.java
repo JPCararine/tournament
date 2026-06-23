@@ -18,14 +18,11 @@ class EmailMimeDebugTest {
 
     @Test
     void compararAbordagens() throws Exception {
-        System.out.println(">>> HEADLESS=" + java.awt.GraphicsEnvironment.isHeadless());
         byte[] bytes = Base64.getDecoder().decode(PNG_BASE64);
 
-        System.out.println(">>> [A] addInline com ByteArrayDataSource(image/png):");
-        System.out.println(">>>     CONTEUDO_PRESENTE=" + buildWithAddInline(bytes));
+        buildWithAddInline(bytes);
 
-        System.out.println(">>> [B] MimeBodyPart manual octet-stream + header image/png:");
-        System.out.println(">>>     CONTEUDO_PRESENTE=" + buildWithOctetStream(bytes));
+        buildWithOctetStream(bytes);
     }
 
     private boolean buildWithAddInline(byte[] bytes) throws Exception {

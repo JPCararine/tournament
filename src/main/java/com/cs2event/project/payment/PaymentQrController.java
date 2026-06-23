@@ -13,8 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -29,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payments")
 public class PaymentQrController {
 
-    private static final Logger log = LoggerFactory.getLogger(PaymentQrController.class);
     private static final int QR_CODE_SIZE = 320;
 
     private final TeamRepository teamRepository;
@@ -96,7 +93,6 @@ public class PaymentQrController {
             MatrixToImageWriter.writeToStream(matrix, "PNG", output);
             return output.toByteArray();
         } catch (WriterException | IOException e) {
-            log.error("Falha ao gerar QR Code PIX para o brCode informado", e);
             return new byte[0];
         }
     }

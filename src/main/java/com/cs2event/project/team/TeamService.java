@@ -8,16 +8,12 @@ import com.cs2event.project.team.dto.DashboardResponse.TeamSummary;
 import com.cs2event.project.team.dto.TeamRegistrationRequest;
 import java.time.Instant;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TeamService {
-
-    private static final Logger log = LoggerFactory.getLogger(TeamService.class);
 
     private final TeamRepository teamRepository;
     private final PaymentService paymentService;
@@ -73,8 +69,6 @@ public class TeamService {
         long confirmedCount = teamRepository.countByStatus(TeamStatus.CONFIRMADA);
         emailService.sendInviteAndCharge(team, confirmedCount);
 
-        log.info("Equipe '{}' registrada como PENDENTE (id={}, billingId={})",
-                team.getTeamName(), team.getId(), team.getBillingId());
         return team;
     }
 

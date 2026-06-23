@@ -2,8 +2,6 @@ package com.cs2event.project.team;
 
 import java.time.Instant;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class PendingTeamCleanupService {
-
-    private static final Logger log = LoggerFactory.getLogger(PendingTeamCleanupService.class);
 
     private final TeamRepository teamRepository;
     private final int pixExpiresSeconds;
@@ -38,7 +34,5 @@ public class PendingTeamCleanupService {
             return;
         }
         teamRepository.deleteAll(expired);
-        log.info("Removidas {} equipe(s) pendente(s) expirada(s) (criadas antes de {})",
-                expired.size(), threshold);
     }
 }
