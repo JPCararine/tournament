@@ -45,9 +45,9 @@ public class EmailService {
         this.prizePerTeam = prizePerTeam;
     }
 
-    public void sendInviteAndCharge(Team team, long confirmedCount) {
+    public void sendInviteAndCharge(Team team, String paymentAccessToken, long confirmedCount) {
         try {
-            String paymentUrl = paymentUrl(team);
+            String paymentUrl = paymentUrl(paymentAccessToken);
             String html = buildHtml(team, paymentUrl, confirmedCount);
             String subject = "Inscricao recebida - " + championshipName + ": " + team.getTeamName();
 
@@ -137,11 +137,11 @@ public class EmailService {
         return "Para concluir sua inscricao, acesse o link de pagamento: " + paymentUrl;
     }
 
-    private String paymentUrl(Team team) {
+    private String paymentUrl(String paymentAccessToken) {
         if (paymentPageBaseUrl != null && !paymentPageBaseUrl.isBlank()) {
-            return trimTrailingSlash(paymentPageBaseUrl) + "/" + team.getBillingId();
+            return trimTrailingSlash(paymentPageBaseUrl) + "/" + paymentAccessToken;
         }
-        return trimTrailingSlash(publicBaseUrl) + "/api/payments/" + team.getBillingId();
+        return trimTrailingSlash(publicBaseUrl) + "/api/payments/" + paymentAccessToken;
     }
 
     private String formatReais(long reais) {

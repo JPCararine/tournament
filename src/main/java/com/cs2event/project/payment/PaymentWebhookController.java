@@ -4,6 +4,8 @@ import com.cs2event.project.payment.dto.WebhookPayload;
 import com.cs2event.project.team.Team;
 import com.cs2event.project.team.TeamRepository;
 import com.cs2event.project.team.TeamStatus;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -89,8 +91,17 @@ public class PaymentWebhookController {
         if (!StringUtils.hasText(webhookToken)) {
             return false;
         }
-        return webhookToken.equals(asaasAccessToken)
-                || webhookToken.equals(secretHeader)
-                || webhookToken.equals(secretParam);
+        byte[] expected = webhookToken.trim().getBytes(StandardCharsets.UTF_8);
+        return constantTimeEquals(expected, asaasAccessToken)
+                || constantTimeEquals(expected, secretHeader)
+                || constantTimeEquals(expected, secretParam);
+    }
+
+    private boolean constantTimeEquals(byte[] expected, String candidate) {
+        if (!StringUtils.hasText(candidate)) {
+            return false;
+        }
+        byte[] actual = candidate.trim().getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expected, actual);
     }
 }

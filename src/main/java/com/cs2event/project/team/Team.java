@@ -36,24 +36,24 @@ public class Team {
     @GeneratedValue
     private UUID id;
 
-    @Column(name = "team_name", nullable = false)
+    @Column(name = "team_name", nullable = false, length = 50)
     private String teamName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 80)
     private String captainName;
 
-    @Column(name = "captain_email", nullable = false)
+    @Column(name = "captain_email", nullable = false, length = 254)
     private String captainEmail;
 
-    @Column(name = "captain_discord_id", nullable = false)
+    @Column(name = "captain_discord_id", nullable = false, length = 40)
     private String captainDiscordId;
 
-    @Column(name = "whatsapp", nullable = false)
+    @Column(name = "whatsapp", nullable = false, length = 20)
     private String whatsapp;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "team_availability", joinColumns = @JoinColumn(name = "team_id"))
-    @Column(name = "slot")
+    @Column(name = "slot", length = 40)
     private List<String> availability = new ArrayList<>();
 
     @Column(columnDefinition = "text")
@@ -66,8 +66,13 @@ public class Team {
     @Column(nullable = false)
     private TeamStatus status = TeamStatus.PENDENTE;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 80)
     private String billingId;
+
+    @Column(unique = true, length = 64)
+    private String paymentAccessTokenHash;
+
+    private Instant paymentAccessExpiresAt;
 
     @Column(columnDefinition = "text")
     private String pixQrCodeBase64;

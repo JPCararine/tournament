@@ -3,6 +3,7 @@ package com.cs2event.project.config;
 import com.cs2event.project.team.DuplicateRegistrationException;
 import com.cs2event.project.team.RegistrationClosedException;
 import com.cs2event.project.payment.AsaasClient;
+import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,6 +25,17 @@ public class ApiExceptionHandler {
         }
         Map<String, Object> body = new HashMap<>();
         body.put("message", "Dados de inscrição inválidos");
+        body.put("errors", errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(violation ->
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage()));
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", "Parametro invalido");
         body.put("errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

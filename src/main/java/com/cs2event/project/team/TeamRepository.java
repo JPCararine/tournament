@@ -10,6 +10,9 @@ public interface TeamRepository extends JpaRepository<Team, UUID> {
 
     Optional<Team> findByBillingId(String billingId);
 
+    Optional<Team> findByPaymentAccessTokenHashAndPaymentAccessExpiresAtAfter(
+            String paymentAccessTokenHash, Instant now);
+
     List<Team> findByStatusOrderByCreatedAtAsc(TeamStatus status);
 
     long countByStatus(TeamStatus status);
